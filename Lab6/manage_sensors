@@ -1,0 +1,72 @@
+ruleset manage_sensors {
+  meta {
+    shares __testing, manage_sensors
+  }
+  global {
+    manage_sensors = function() {
+      ent:sensors
+    }
+    __testing = { "queries":
+      [ { "name": "__testing" }
+      //, { "name": "entry", "args": [ "key" ] }
+      ] , "events":
+      [ //{ "domain": "d1", "type": "t1" }
+      //, { "domain": "d2", "type": "t2", "attrs": [ "a1", "a2" ] }
+      ]
+    }
+    temperature_threshold = 75.5
+    message_recipient = 18016738779
+    twilio_number = 14133495539
+  }
+
+  rule manage_sensors {
+    select when sensor new_sensor
+    pre {
+      name = event:attr("name")
+      eci = meta:eci
+      exists = ent:sensors >< name      // Does not allow duplicates
+    }
+    if not exists then
+      noop()
+    fired {
+      ent:sensors := ent:sensors.defaultsTo({});
+      ent:sensors{[name]} := eci;             // Maps the name of the new pico to its ECI
+      raise wrangler event "child_creation"   // Creates the new pico
+        attributes {  "name": name,
+                      "color": "#ffff00",
+                      "rids": ["temperature_store", "wovyn_base", "sensor_profile"]   //Install rulesets in new pico
+        }
+    }
+  }
+
+  rule child_initialized {
+    select when wrangler child_initialized
+    pre {
+      name = event:attr("name")
+    }
+    if name.klog("found name")
+    then
+      event:send(
+        { "domain": "sensor", "type": "profile_updated",
+          "attrs": { "name": name, "threshold": temperature_threshold, "sms": message_recipient } } )
+    fired {
+      ent:sections := ent:sections.defaultsTo({});
+      ent:sections{[section_id]} := the_section
+    }
+  }
+
+  rule sensor_offline {
+    select when sensor unneeded_sensor
+    pre {
+      name = event:attr("name")
+      exists = ent:sensors >< name
+    }
+    if exists then
+      send_directive("deleting_sensor", {"name": name})
+    fired {
+      raise wrangler event "child_deletion"
+        attributes {"name": name};
+      clear ent:sensors{[name]}
+    }
+  }
+}
