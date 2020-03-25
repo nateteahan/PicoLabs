@@ -1,0 +1,35 @@
+ruleset sensor_profile {
+  meta {
+    shares __testing, get_data
+  }
+  global {
+    __testing = { "queries":
+      [ { "name": "__testing" }
+      //, { "name": "entry", "args": [ "key" ] }
+      ] , "events":
+      [ { "domain": "sensor", "type": "profile_updated", "attrs": ["location", "name", "threshold", "sms"]}//{ "domain": "d1", "type": "t1" }
+      //, { "domain": "d2", "type": "t2", "attrs": [ "a1", "a2" ] }
+      ]
+    }
+
+    get_data = function() {
+      ent:information
+    }
+  }
+
+  rule update {
+    select when sensor profile_updated
+
+    pre {
+      location = (event:attrs{"location"}.isnull() || event:attrs{"location"} == "") => "Asgard" | event:attrs{"location"}
+      name = (event:attrs{"name"}.isnull() || event:attrs{"name"} == "") => "Norberto" | event:attrs{"name"}
+      threshold = (event:attrs{"threshold"}.isnull() || event:attrs{"threshold"} == "") => 75.5 | event:attrs{"threshold"}
+      sms_number = (event:attrs{"sms"}.isnull() || event:attrs{"sms"} == "") => 8016738779 | event:attrs{"sms"}
+      map = {"location": location, "name": name, "threshold": threshold, "sms_number": sms_number}
+    }
+        send_directive("update", {"location": location, "name" : name, "threshold": threshold, "sms": sms_number})
+    always {
+      ent:information := map;
+    }
+  }
+}

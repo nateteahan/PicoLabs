@@ -1,0 +1,74 @@
+ruleset temperature_store {
+  meta {
+    provides temperatures, threshold_violations, inrange_temperatures
+    shares __testing, temperatures, threshold_violations, inrange_temperatures
+  }
+  global {
+    __testing = { "queries":
+      [ { "name": "__testing" }
+      //, { "name": "entry", "args": [ "key" ] }
+      ] , "events":
+      [ //{ "domain": "d1", "type": "t1" }
+      //, { "domain": "d2", "type": "t2", "attrs": [ "a1", "a2" ] }
+      ]
+    }
+
+    temperatures = function() {
+      ent:stored_temps
+    }
+
+    threshold_violations = function() {
+      ent:stored_thresholds
+    }
+
+    inrange_temperatures = function() {
+      ent:stored_temps.difference(ent:stored_thresholds)
+    }
+  }
+
+  rule collect_temperatures {
+    select when wovyn new_temperature_reading
+
+    pre {
+      temperature_fahrenheit = event:attrs{"temp"}
+      timestamp = event:attrs{"timestamp"}
+      temp = {"temperature" : temperature_fahrenheit, "timestamp" : timestamp}
+    }
+
+    /* Check to see if the entity varibale has been initialized
+       If no, initialize it to the defualt and place the temperature and timestamp in it
+       Else, place the temperature and timestamp in it */
+       always {
+         ent:stored_temps := ent:stored_temps.defaultsTo([]).append(temp)
+       }
+  }
+
+  rule collect_threshold_violations {
+    select when wovyn threshold_violation
+
+    pre {
+      //Get the temperature and create a timestamp
+      temp_violation = event:attrs{"violation_temp"}
+      time = time:now()
+      violations = {"violation" : temp_violation, "time" : time}
+    }
+
+    /* Check to see if the entity varibale has been initialized
+       If no, initialize it to the default and place the temperature and timestamp in it
+       Else, place the temperature and timestamp in it */
+    always {
+      ent:stored_thresholds := ent:stored_thresholds.defaultsTo([]).append(violations)
+    }
+  }
+
+  rule clear_temperatures {
+    select when sensor reading_reset
+
+    always {
+      //Instead of calling clear, set the entity vars to null
+      //This is because that is the condition that the other rules check
+      clear ent:stored_temps;
+      clear ent:stored_thresholds
+    }
+  }
+}

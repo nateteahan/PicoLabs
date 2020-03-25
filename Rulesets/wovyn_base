@@ -1,0 +1,64 @@
+ruleset wovyn_base {
+  meta {
+    shares __testing
+    use module twilio_keys
+    use module twilio_module alias twilio
+      with account_sid = keys:twilioKeys{"account_sid"}
+            auth_token = keys:twilioKeys{"auth_token"}
+  }
+  global {
+    __testing = { "queries":
+      [ { "name": "__testing" }
+      ] , "events":
+      [ { "domain": "wovyn", "type": "heartbeat" }
+      ]
+    }
+
+    temperature_threshold = 75.5
+    message_recipient = 18016738779
+    twilio_number = 14133495539
+  }
+
+  rule process_heartbeat {
+    select when wovyn heartbeat where event:attr("genericThing")
+
+    pre {
+      attribute_map = event:attrs.klog("Attributes: ")
+      temperature_array = attribute_map.values(["genericThing", "data", "temperature"])
+      temperature_fahrenheit = temperature_array[0]{"temperatureF"}
+                                            .klog("Fahrenheit temperature is: ")
+
+      timestamp = time:now().klog("Timestamp: ")
+    }
+    send_directive("heartbeat", {"something" : "This is the heartbeat directive"})
+
+    fired {
+      raise wovyn event "new_temperature_reading"
+        attributes {"temp" : temperature_fahrenheit, "timestamp" : timestamp}
+    }
+  }
+
+  rule find_high_temps {
+    select when wovyn new_temperature_reading
+
+    pre {
+      temperature = event:attrs{"temp"}
+      violation = (temperature > temperature_threshold) => 1 | 0
+    }
+
+    if violation then
+      send_directive("Threshold violation")
+    fired {
+      raise wovyn event "threshold_violation"
+        attributes {"violation_temp" : temperature}
+    }
+  }
+
+
+
+  rule threshold_notification {
+    select when wovyn threshold_violation
+
+    twilio:send_sms(message_recipient, twilio_number, "There was a temperature violation")
+  }
+}
