@@ -31,7 +31,7 @@ ruleset echo_monkey {
     send_directive("say", {"something": greeting})
   }
 
-  rule echo_monke_two {
+  rule echo_monkey_two {
     select when echo monkey_two
     pre {
       name = event:attrs{"name"} => event:attrs{"name"} | "monkey";
