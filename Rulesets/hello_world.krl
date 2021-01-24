@@ -24,7 +24,7 @@ ruleset echo_monkey {
  
   rule echo_monkey_one {
     select when echo monkey_one
-    pre{
+    pre {
       name = event:attrs{"name"}.defaultsTo("monkey").klog();
       greeting = "Hello, " + name;
     }
@@ -33,7 +33,7 @@ ruleset echo_monkey {
 
   rule echo_monke_two {
     select when echo monkey_two
-    pre{
+    pre {
       name = event:attrs{"name"} => event:attrs{"name"} | "monkey";
       greeting = "Hello, " + name;
     }
