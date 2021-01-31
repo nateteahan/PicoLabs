@@ -21,6 +21,6 @@ ruleset use_twilio {
             phoneNumber = event:attrs{"phoneNumber"}
         }
         if message && phoneNumber then 
-            twilio:send_message(phoneNumber, message) setting(response)
+            twilio:sendMessage(phoneNumber, message) setting(response)
     }
 }
