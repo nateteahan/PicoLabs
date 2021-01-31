@@ -22,8 +22,7 @@ ruleset twilio_module {
         }
 
         filterMessages = function(filter) {
-            http:get(<<#{url}/#{sessionId}/Messages.json>>, auth=authentication, qs=filter) {"content"}.decode().klog("Filtered messages:")
-        }
+            http:get(<<#{url}/Accounts/#{sessionId}/Messages.json>>, auth=authentication, qs=filter){"content"}.decode().klog("get Messages: ")        }
 
         sendMessage = defaction(phoneNumber, messageBody) {
             messageString = {"To": phoneNumber, "From": number, "Body": messageBody}
