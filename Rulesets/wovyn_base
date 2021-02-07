@@ -1,10 +1,15 @@
 ruleset wovyn_base {
   meta {
-    shares __testing
-    use module twilio_keys
-    use module twilio_module alias twilio
-      with account_sid = keys:twilioKeys{"account_sid"}
-            auth_token = keys:twilioKeys{"auth_token"}
+        name "Twilio Module"
+        description <<
+            The module containing the actions and keys to use Twilio
+        >>
+        logging on
+        configure using
+            apiKey = ""
+            sessionId = ""
+            number = ""
+        author "Nate Teahan"
   }
   global {
     __testing = { "queries":
