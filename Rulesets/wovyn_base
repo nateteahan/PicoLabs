@@ -20,8 +20,8 @@ ruleset wovyn_base {
     }
 
     temperature_threshold = 75.5
-    message_recipient = 18016738779
-    twilio_number = 14133495539
+    message_recipient = "+18016738779"
+    twilio_number = "+14133495539"
   }
 
   rule process_heartbeat {
