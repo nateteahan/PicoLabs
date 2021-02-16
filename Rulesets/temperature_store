@@ -7,8 +7,10 @@ ruleset temperature_store {
     __testing = { "queries": [  { "name": "temperatures" },
                                 { "name": "threshold_violations" },
                                 { "name": "inrange_temperatures" }],
-              "events": [ { "domain": "test", "type": "new_message",
-                            "attrs": [ "to", "message" ] }
+              "events": [ { "domain": "wovyn", "name": "new_temperature_reading",
+                            "attrs": [ "temp", "timestamp" ] },
+                            {"domain": "wovyn", "name": "threshold_violation", "attrs": ["violation_temp"]},
+                            {"domain": "sensor", "name": "reading_reset"}
                         ]
             }
 
@@ -37,6 +39,9 @@ ruleset temperature_store {
     /* Check to see if the entity varibale has been initialized
        If no, initialize it to the defualt and place the temperature and timestamp in it
        Else, place the temperature and timestamp in it */
+       if temp then
+        send_directive("Temp received", {"Temperature": temp})
+        
        always {
          ent:stored_temps := ent:stored_temps.defaultsTo([]).append(temp)
        }
