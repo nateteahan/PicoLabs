@@ -4,14 +4,13 @@ ruleset temperature_store {
     shares __testing, temperatures, threshold_violations, inrange_temperatures
   }
   global {
-    __testing = { "queries":
-      [ { "name": "__testing" }
-      //, { "name": "entry", "args": [ "key" ] }
-      ] , "events":
-      [ //{ "domain": "d1", "type": "t1" }
-      //, { "domain": "d2", "type": "t2", "attrs": [ "a1", "a2" ] }
-      ]
-    }
+    __testing = { "queries": [  { "name": "temperatures" },
+                                { "name": "threshold_violations" },
+                                { "name": "inrange_temperatures" }],
+              "events": [ { "domain": "test", "type": "new_message",
+                            "attrs": [ "to", "message" ] }
+                        ]
+            }
 
     temperatures = function() {
       ent:stored_temps
