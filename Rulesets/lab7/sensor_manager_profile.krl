@@ -1,7 +1,7 @@
 ruleset sensor_manager_profile {
 	meta {
 		name "Manage Sensor"
-		author "Daniel Randall"
+		author "Nate Teahan"
 
 		use module twilio
 			with
