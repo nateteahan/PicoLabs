@@ -249,4 +249,11 @@ ruleset sensor_manager {
             ent:currentReports{reportId} := {"temperature_sensors": report["temperature_sensors"], "temperatures": new_reports}
         }
     }
+    
+    rule new_report {
+        select when new report
+        always {
+            ent:final_reports := []
+        }
+    }
 }
