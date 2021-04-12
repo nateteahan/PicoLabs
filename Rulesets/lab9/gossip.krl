@@ -1,11 +1,8 @@
 ruleset gossip {
     meta {
-		name "Gossip Protocol"
-		author "Nate Teahan"
-
 		use module io.picolabs.subscription alias subscription
 
-		shares getSequenceNumber, getPicoID, getMissingMessages, getPeer, getHighestSequenceNumber, instantiateMessage, generateMessageID,
+		shares getCurrentPeerState, getProcess, getSequenceNumber, getPicoID, getMissingMessages, getPeer, getHighestSequenceNumber, instantiateMessage, generateMessageID,
         prepareMessage, getSeenMessage, getRumorMessage, getSchedule, tempLogs
 	}
 
@@ -13,6 +10,10 @@ ruleset gossip {
         // Functions
         getSchedule = function() {
             ent:schedule
+        }
+
+        getProcess = function() {
+            ent:process
         }
 
         tempLogs = function() {
@@ -23,6 +24,10 @@ ruleset gossip {
 
                 ent:seen{picoID} == sequence_number
             });
+        }
+
+        getCurrentPeerState = function() {
+            ent:current_peer_state
         }
 
         getHighestSequenceNumber = function(id) {
@@ -137,7 +142,7 @@ ruleset gossip {
 
         pre {
             neighbor = getPeer().klog("Sending to:")
-            message = prepareMessage(neighbor)
+            message = prepareMessage(neighbor).klog("message is:")
         }
 
         if (not neighbor.isnull()) && (not message{"message"}.isnull()) then
@@ -146,7 +151,7 @@ ruleset gossip {
         fired {
             raise gossip event "send_rumor_message" attributes {
                 "neighbor": neighbor,
-                "message": message{"message"}
+                "message": message{"message"}.klog("Message being sent to send_rumor rule")
             }
             if (message{"message_type"} == "rumor_message")
 
@@ -161,8 +166,8 @@ ruleset gossip {
     rule send_rumor_message {
         select when gossip send_rumor_message
         pre {
-            neighbor = event:attrs{"neighbor"}
-            message = event:attrs{"message"}
+            neighbor = event:attrs{"neighbor"}.klog("This is the neighbor receiving the rumor message")
+            message = event:attrs{"message"}.klog("This is the message being sent as a rumor:")
             message_id = getPicoID(message{"MessageID"})
             sequence_number = getSequenceNumber(message{"MessageID"})
         }
@@ -202,11 +207,12 @@ ruleset gossip {
         select when gossip rumor where ent:process == "on"
         
         pre {
-            message_id = event:attrs{"MessageID"}
-            sequence_number = getSequenceNumber(message_id)
-            pico_ID = getPicoID(message_id)
-            seen_msg = ent:seen{pico_ID}
-            first_neighbor = ent:seen{pico_ID}.isnull()
+            attr = event:attrs.klog("This is the event attr map")
+            message_id = event:attrs{"message"}{"MessageID"}.klog("MESSAGE ID:")
+            sequence_number = getSequenceNumber(message_id).klog("SEQUENCE NUMBER:")
+            pico_ID = getPicoID(message_id).klog("PICO ID:")
+            seen_msg = ent:seen{pico_ID}.klog("SEEN MESSAGE:")
+            first_neighbor = ent:seen{pico_ID}.isnull().klog("FIRST NEIGHBOR:")
         }
 
         if first_neighbor then 
@@ -233,7 +239,8 @@ ruleset gossip {
     rule update_sequence_number {
         select when gossip update_sequence_number
         pre {
-            pico_ID = event:atrrs{"PicoID"}
+            attrs = event:attrs.klog("Event attrs coming to update sequence number:")
+            pico_ID = event:attrs{"PicoID"}
             sequence_number = event:attrs{"sequence_number"}
         }
 
@@ -273,13 +280,12 @@ ruleset gossip {
     }
 
     rule toggle_process {
-        select when gossip toggle_process
+        select when gossip toggle_process     
         pre {
-            state = event:attrs{"state"}
-        }
-
+            state = ent:process
+        }       
         always {
-            ent:process := state
+            ent:process := state == "on" => "off" | "on"
         }
     }
 
@@ -325,7 +331,6 @@ ruleset gossip {
     }
 
     rule ruleset_added {
-        // where rids >< meta:rid NOT WORKING
         select when wrangler ruleset_added where event:attrs{"rids"} >< meta:rid
 
         always {
@@ -363,7 +368,7 @@ ruleset gossip {
     rule clear_everything {
         select when nuke gossip
         always {
-            ent:schedule := 3
+            ent:schedule := 8
             ent:current_sequence := 0;
             ent:seen := {};
             ent:current_peer_state := {};
