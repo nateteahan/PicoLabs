@@ -364,20 +364,7 @@ ruleset gossip {
             ent:schedule := new_schedule
         }
     }
-
-    rule clear_everything {
-        select when nuke gossip
-        always {
-            ent:schedule := 8
-            ent:current_sequence := 0;
-            ent:seen := {};
-            ent:current_peer_state := {};
-            ent:seen_messages := [];
-            ent:process := "on";
-        }
-    }
-    
-    	rule toggle_violation_state {
+	rule toggle_violation_state {
 		select when wovyn toggle_violation_state
 
 		pre {
@@ -434,4 +421,15 @@ ruleset gossip {
 			ent:sequence := ent:sequence + 1;
 		}
 	}
+    rule clear_everything {
+        select when nuke gossip
+        always {
+            ent:schedule := 8
+            ent:current_sequence := 0;
+            ent:seen := {};
+            ent:current_peer_state := {};
+            ent:seen_messages := [];
+            ent:process := "on";
+        }
+    }
 }
